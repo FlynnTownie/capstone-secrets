@@ -1,0 +1,35 @@
+name: Ship anomalies to Elasticsearch
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  index:
+    # Use the self-hosted runner that sits next to your local Elasticsearch
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install requests
+          if exist requirements.txt ( pip install -r requirements.txt )
+
+      - name: Run anomaly indexer
+        env:
+          ES_URL: ${{ secrets.ES_URL }}
+          ES_API_ID: ${{ secrets.ES_API_ID }}
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+          ES_INDEX: ${{ secrets.ES_INDEX }}
+          # ANOMALIES_JSONL: path\to\your\generated\file.jsonl
+        run: python .github/scripts/index_anomalies.py
