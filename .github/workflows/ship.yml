@@ -7,17 +7,16 @@ on:
 
 jobs:
   index:
-    # Use your self-hosted Windows runner. If your runner shows extra labels, include them:
+    # Use the labels your runner advertises. Your logs show: self-hosted, Windows, X64
     runs-on: [self-hosted, Windows, X64]
-    #runs-on: self-hosted
 
     defaults:
       run:
         shell: powershell
 
     steps:
-      - name: Allow PowerShell scripts for this user (once per job)
-        run: Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+      - name: Allow PowerShell scripts for this job
+        run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
       - name: Check out repo
         uses: actions/checkout@v4
@@ -29,10 +28,17 @@ jobs:
           }
           Get-ChildItem $env:GITHUB_WORKSPACE -Recurse -Filter *.ps1 -ErrorAction SilentlyContinue | Unblock-File
 
-      - name: Set up Python
+      - name: Verify script exists
+        run: |
+          if (!(Test-Path "$env:GITHUB_WORKSPACE\.github\scripts\index_anomalies.py")) {
+            Write-Error "Missing .github\scripts\index_anomalies.py. Commit it first."
+          }
+
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'
 
       - name: Install deps
         run: |
@@ -40,11 +46,18 @@ jobs:
           pip install requests
           if (Test-Path "requirements.txt") { pip install -r requirements.txt }
 
+      - name: Sanity check ES connectivity
+        env:
+          ES_URL: ${{ secrets.ES_URL }}
+        run: |
+          Write-Host "Pinging $env:ES_URL"
+          C:\Windows\System32\curl.exe -s -k "$env:ES_URL" | Out-Host
+
       - name: Run anomaly indexer
         env:
-          ES_URL:  ${{ secrets.ES_URL }}      # e.g. https://localhost:9200 for your local ES
+          ES_URL:  ${{ secrets.ES_URL }}      # e.g. https://localhost:9200
           ES_API_ID:  ${{ secrets.ES_API_ID }}
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           ES_INDEX:   ${{ secrets.ES_INDEX }} # anomalies-capstone
           # ANOMALIES_JSONL: path\to\your\generated\file.jsonl
-        run: python .github/scripts/index_anomalies.py
+        run: python .github\scripts\index_anomalies.py
