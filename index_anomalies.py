@@ -15,14 +15,7 @@ def post(doc: dict):
     r.raise_for_status()
 
 def main():
-    # Option A - post a single fake anomaly for a smoke test
-    post({
-        "src_ip":"10.0.0.5","dst_ip":"54.66.123.1","src_port":51512,"dst_port":443,
-        "proto":"tcp","score":0.97,"label":"malicious",
-        "features":{"conn_state":"S0","duration":0.0}
-    })
-
-    # Option B - index many from a JSONL file if you produce one in your build
+    #Option B - index many from a JSONL file if you produce one in your build
     path = os.getenv("ANOMALIES_JSONL", "")
     if path and os.path.exists(path):
         with open(path, "r", encoding="utf-8") as fh:
