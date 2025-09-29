@@ -1,4 +1,4 @@
-# .github/scripts/index_anomalies.py
+# .github/scripts/index_anomalies.py 
 import os, base64, json, datetime, requests, sys
 
 ES_URL   = os.getenv("ES_URL", "https://localhost:9200").rstrip("/")
