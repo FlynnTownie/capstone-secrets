@@ -1,3 +1,24 @@
+jobs:
+  index:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      - name: Allow scripts for this job
+        run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+      - name: Unblock downloaded scripts
+        run: Get-ChildItem -Recurse -Filter *.ps1 | Unblock-File
+
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.10' }
+
 name: Ship anomalies to Elasticsearch
 
 on:
